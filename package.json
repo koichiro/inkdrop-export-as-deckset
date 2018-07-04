@@ -1,10 +1,9 @@
 {
   "name": "export-as-deckset",
   "main": "./lib/index.js",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Export as deckset",
-  "keywords": [
-  ],
+  "keywords": [],
   "repository": {
     "type": "git",
     "url": "https://github.com/koichiro/inkdrop-export-as-deckset.git"
