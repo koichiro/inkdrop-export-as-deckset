@@ -1,13 +1,18 @@
 {
-  "version": "0.2.0",
-  "name": "export-as-markdown",
-  "description": "Export as markdown",
+  "name": "export-as-deckset",
+  "main": "./lib/index.js",
+  "version": "0.0.1",
+  "description": "Export as deckset",
+  "keywords": [
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/inkdropapp/inkdrop-export-as-markdown.git"
+    "url": "https://github.com/koichiro/inkdrop-export-as-deckset.git"
   },
-  "main": "lib/index.js",
-  "styleSheets": [],
+  "license": "MIT",
+  "engines": {
+    "inkdrop": ">=3.7.3 <4.0.0"
+  },
   "scripts": {
     "build": "babel src/ -d lib/",
     "dev": "babel src/ -s -d lib/ --watch",
