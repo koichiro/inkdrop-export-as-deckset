@@ -33,6 +33,7 @@ export async function exportNote(note, pathToSave, fileName) {
     const datestr = moment(note.createdAt).format('YYYYMMDD')
     fileName = fileName || sanitize(datestr + '-' + note.title) + '.md'
     const filePath = path.join(pathToSave, fileName)
+    let body = note.body
 
     // find attachments
     const uris = body.match(/inkdrop:\/\/file:[^\) ]*/g) || []
