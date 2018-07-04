@@ -1,4 +1,3 @@
-
 import { remote } from 'electron'
 import path from 'path'
 import sanitize from 'sanitize-filename'
@@ -34,7 +33,6 @@ export async function exportNote(note, pathToSave, fileName) {
     const datestr = moment(note.createdAt).format('YYYYMMDD')
     fileName = fileName || sanitize(datestr + '-' + note.title) + '.md'
     const filePath = path.join(pathToSave, fileName)
-    let body = '# ' + note.title + '\n\n' + note.body
 
     // find attachments
     const uris = body.match(/inkdrop:\/\/file:[^\) ]*/g) || []
