@@ -4,22 +4,29 @@ import sanitize from 'sanitize-filename'
 import fs from 'fs'
 import touch from 'touch'
 import moment from 'moment'
-const { dialog, app } = remote
+import { logger } from 'inkdrop'
+import { replaceImages } from 'inkdrop-export-utils'
+const { dialog } = remote
 
-export async function exportSingleNote() {
-  const { document } = inkdrop.flux.getStore('editor').getState()
-  const pathToSave = dialog.showSaveDialog({
-    title: 'Save Markdown File',
-    defaultPath: `${document.title}.md`,
-    filters: [{ name: 'Markdown Files', extensions: ['md'] }]
+export async function exportAll() {
+  const pathArrayToSave = dialog.showOpenDialog({
+    title: 'Select a directory to export all notes',
+    properties: ['openDirectory', 'createDirectory']
   })
-  if (pathToSave) {
+  if (pathArrayToSave) {
+    const [pathToSave] = pathArrayToSave
+    const books = inkdrop.store.getState().books.tree
     try {
-      const destDir = path.dirname(pathToSave)
-      const fileName = path.basename(pathToSave)
-      await exportNote(document, destDir, fileName)
+      await books.reduce((promise, book) => {
+        return promise.then(() => exportBook(pathToSave, book))
+      }, Promise.resolve())
+      logger.info('Finished exporting all notes')
+      inkdrop.notifications.addInfo('Finished exporting all notes', {
+        detail: 'Directory: ' + pathToSave,
+        dismissable: true
+      })
     } catch (e) {
-      console.error('Failed to export:', e)
+      logger.error('Failed to export:', e)
       inkdrop.notifications.addError('Failed to export', {
         detail: e.message,
         dismissable: true
@@ -28,34 +35,59 @@ export async function exportSingleNote() {
   }
 }
 
-export async function exportNote(note, pathToSave, fileName) {
-  if (note.body) {
-    const datestr = moment(note.createdAt).format('YYYYMMDD')
-    fileName = fileName || sanitize(datestr + '-' + note.title) + '.md'
-    const filePath = path.join(pathToSave, fileName)
-    let body = note.body
-
-    // find attachments
-    const uris = body.match(/inkdrop:\/\/file:[^\) ]*/g) || []
-    for (let i = 0; i < uris.length; ++i) {
-      const uri = uris[i]
-      const imagePath = await exportImage(uri, pathToSave)
-      if (imagePath) {
-        body = body.replace(uri, imagePath)
-      }
+export async function exportSingleNote() {
+  const { editingNote } = inkdrop.store.getState()
+  const pathToSave = dialog.showSaveDialog({
+    title: 'Save Markdown File',
+    defaultPath: `${editingNote.title}.md`,
+    filters: [{ name: 'Markdown Files', extensions: ['md'] }]
+  })
+  if (pathToSave) {
+    try {
+      const destDir = path.dirname(pathToSave)
+      const fileName = path.basename(pathToSave)
+      await exportNote(editingNote, destDir, fileName)
+    } catch (e) {
+      logger.error('Failed to export editing note:', e, editingNote)
+      inkdrop.notifications.addError('Failed to export editing note', {
+        detail: e.message,
+        dismissable: true
+      })
     }
-
-    fs.writeFileSync(filePath, body)
-    touch.sync(filePath, { time: new Date(note.updatedAt) })
   }
 }
 
-export async function exportImage(uri, pathToSave) {
-  try {
-    const file = await inkdrop.models.File.getDocumentFromUri(uri)
-    return file.saveFileSync(pathToSave)
-  } catch (e) {
-    console.error('Failed to export image file:', e)
-    return false
+export async function exportBook(parentDir, book) {
+  const db = inkdrop.main.dataStore.getLocalDB()
+  const dirName = sanitize(book.name, { replacement: '-' })
+  const pathToSave = path.join(parentDir, dirName)
+  const { docs: notes } = await db.notes.findInBook(book._id, {
+    limit: false
+  })
+
+  fs.mkdirSync(pathToSave)
+  for (let i = 0; i < notes.length; ++i) {
+    await exportNote(notes[i], pathToSave)
+  }
+
+  if (book.children) {
+    await book.children.reduce((promise, childBook) => {
+      return promise.then(() => exportBook(pathToSave, childBook))
+    }, Promise.resolve())
+  }
+}
+
+export async function exportNote(note, pathToSave, fileName) {
+  if (note.body) {
+    const datestr = moment(note.createdAt).format('YYYYMMDD')
+    fileName =
+      fileName ||
+      sanitize(datestr + '-' + note.title + '-' + note._id.substr(5)) + '.md'
+    const filePath = path.join(pathToSave, fileName)
+    let body = '# ' + note.title + '\n\n' + note.body
+    body = await replaceImages(body, pathToSave)
+
+    fs.writeFileSync(filePath, body)
+    touch.sync(filePath, { time: new Date(note.updatedAt) })
   }
 }
