@@ -84,7 +84,7 @@ export async function exportNote(note, pathToSave, fileName) {
       fileName ||
       sanitize(datestr + '-' + note.title + '-' + note._id.substr(5)) + '.md'
     const filePath = path.join(pathToSave, fileName)
-    let body = '# ' + note.title + '\n\n' + note.body
+    let body = note.body
     body = await replaceImages(body, pathToSave)
 
     fs.writeFileSync(filePath, body)
