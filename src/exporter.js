@@ -10,7 +10,7 @@ const { dialog } = remote
 
 export async function exportSingleNote() {
   const { editingNote } = inkdrop.store.getState()
-  const pathToSave = dialog.showSaveDialog({
+  const { filePath: pathToSave } = await dialog.showSaveDialog({
     title: 'Save Markdown File',
     defaultPath: `${editingNote.title}.md`,
     filters: [{ name: 'Markdown Files', extensions: ['md'] }]
