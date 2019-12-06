@@ -6,11 +6,6 @@ module.exports = {
     })
   },
 
-  exportAll() {
-    const { exportAll } = require('./exporter')
-    exportAll()
-  },
-
   exportSingleNote() {
     const { exportSingleNote } = require('./exporter')
     exportSingleNote()
