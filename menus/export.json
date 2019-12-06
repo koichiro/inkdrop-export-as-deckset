@@ -6,7 +6,6 @@
         {
           "label": "Export",
           "submenu": [
-            { "label": "All Decksets..", "command": "export-as-deckset:all" },
             { "label": "As Deckset..", "command": "export-as-deckset:single" }
           ]
         }
